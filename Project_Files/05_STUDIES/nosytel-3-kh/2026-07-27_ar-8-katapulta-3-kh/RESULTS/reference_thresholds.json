@@ -1,0 +1,37 @@
+{
+  "timestamp": "2026-07-26 18:40:36",
+  "design_ref": {
+    "SWEEP_LE_DEG": 12.0,
+    "ROOT_TWIST_DEG": 0.0,
+    "X1_OFF": 0.0,
+    "X2_OFF": 0.0,
+    "X3_OFF": 0.0,
+    "C1_MUL": 0.7833333333333333,
+    "DC2": 0.21666666666666667,
+    "DC3": 0.21666666666666667,
+    "TW1_DEG": -1.3333333333333333,
+    "TW2_DEG": -2.6666666666666665,
+    "TW3_DEG": -4.0,
+    "Z1_FRAC": 0.010481555856608243,
+    "Z2_FRAC": 0.023583500677368543,
+    "Z3_FRAC": 0.03668544549812885,
+    "Z4_FRAC": 0.04716700135473709,
+    "Z5_FRAC": 0.05240777928304121
+  },
+  "alpha_star_deg": 6.985186876186134,
+  "alpha_star_coarse_deg_for_SM": 7.025118326116223,
+  "Cn_beta_ref_per_rad": 0.0,
+  "Cl_beta_ref_per_rad": -0.02,
+  "stability_mode": "absolute",
+  "stability_source": "absolute requirement from config",
+  "Cn_beta_measured_on_reference": -0.008392501700587677,
+  "Cl_beta_measured_on_reference": -0.057296092552571704,
+  "reference_mode": "requirements",
+  "root_chord_fixed": false,
+  "c_root_ref_m": 0.294047669031924,
+  "structure_ref": {
+    "U_total_ref": 0.003924074152146042,
+    "sigma_peak_ref_Pa": 10697870.714156697,
+    "sigma_cv_ref": 0.8491728421477142
+  }
+}

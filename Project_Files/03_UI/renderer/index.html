@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; img-src data:; style-src 'self'; script-src 'self';" />
+  <title>Wing Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◤</span>
+    <div>
+      <div class="brand-title">Wing Generator</div>
+      <div class="brand-sub">NX-2 · Differential Evolution + VLM</div>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="studies">Дослідження</button>
+    <button class="tab" data-tab="req">1 · Вимоги</button>
+    <button class="tab" data-tab="params">2 · Параметри</button>
+    <button class="tab" data-tab="run">3 · Розрахунок</button>
+    <button class="tab" data-tab="results">4 · Результати</button>
+  </nav>
+
+  <div class="active-study" id="activeStudy" title="Активне дослідження">
+    <span class="as-none">дослідження не вибрано</span>
+  </div>
+
+  <div class="env" id="env">
+    <span class="dot pending" id="envDot"></span>
+    <span id="envText">перевірка оточення…</span>
+  </div>
+</header>
+
+<!-- ============================ ДОСЛІДЖЕННЯ =========================== -->
+<section class="page active" id="page-studies">
+  <aside class="sidebar wide-side">
+    <div class="toolbar tight">
+      <button class="btn primary" id="btnNewProject">+ Створити проєкт</button>
+    </div>
+    <div id="studyTree" class="study-tree"></div>
+  </aside>
+
+  <main class="content">
+    <div class="basic-note">
+      Дослідження — це один прогін зі своїми вхідними даними. Його вимоги,
+      параметри й результати лежать окремо, тож завжди видно, під що саме
+      отримано результат. Як тільки в дослідженні з'явилась перша оцінка, вхідні
+      дані заморожуються — щоб змінити параметри, клонуйте дослідження.
+    </div>
+    <div id="studyDetail" class="detail">
+      <div class="empty">Виберіть дослідження ліворуч.</div>
+    </div>
+  </main>
+</section>
+
+<!-- ============================== ВИМОГИ ============================== -->
+<section class="page" id="page-req">
+  <aside class="sidebar">
+    <div class="side-head">Результат підбору</div>
+    <div class="sizing" id="szResult">
+      <div class="empty-small">Натисніть «Підібрати розмір»</div>
+    </div>
+    <div class="side-head">Далі</div>
+    <div class="sizing">
+      <div class="step-note">Підбір записує площу, розмах, швидкість і всі габаритні обмеження у <b>wing_config.json</b>. Після цього переходьте на «3 · Розрахунок».</div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="toolbar">
+      <button class="btn primary big" id="btnSize">⚖ Підібрати розмір</button>
+      <button class="btn" id="btnSizeDry">Порахувати без запису</button>
+      <div class="spacer"></div>
+      <button class="btn" id="btnReqSave">Зберегти вимоги</button>
+    </div>
+    <div class="frozen-bar" id="reqFrozenBar">
+      <b>Дослідження прораховане — вхідні дані заморожені.</b>
+      Щоб рахувати з іншими вимогами, створіть клон: він успадкує ці числа, а
+      результати цього дослідження залишаться недоторканими.
+      <button class="btn accent" data-clone="1">Клонувати дослідження</button>
+    </div>
+    <div class="dirty-bar" id="reqDirtyBar">Вимоги змінено — «Підібрати розмір» збереже їх автоматично.</div>
+    <div class="basic-note">Це вхідні дані вашого літака. Звідси рахується злітна маса, а з неї — площа крила й розмах. Оптимізатор форми ці числа не бачить: він отримує вже готову точку проєктування.</div>
+    <div id="reqForm" class="form"></div>
+    <div class="card" id="sizeLogCard" hidden>
+      <div class="card-head">Звіт підбору</div>
+      <div class="card-body"><pre class="raw" id="sizeLog"></pre></div>
+    </div>
+  </main>
+</section>
+
+<!-- ============================== ПАРАМЕТРИ ============================== -->
+<section class="page" id="page-params">
+  <aside class="sidebar">
+    <div class="side-head">Групи</div>
+    <div id="groupNav" class="group-nav"></div>
+
+    <div class="side-head">Точка проєктування</div>
+    <div class="sizing" id="sizing">
+      <div class="sizing-row"><span>Подовження AR</span><b id="szAR">—</b></div>
+      <div class="sizing-row"><span>Середня хорда</span><b id="szMAC">—</b></div>
+      <div class="sizing-row"><span>Щільність повітря</span><b id="szRho">—</b></div>
+      <div class="sizing-row"><span>Навантаж. на крило</span><b id="szWL">—</b></div>
+      <div class="sizing-row"><span>Підйомна сила</span><b id="szLift">—</b></div>
+      <div class="sizing-big">
+        <span>Несе повної маси</span>
+        <b id="szMass">—</b>
+      </div>
+      <div class="sizing-row">
+        <span>Потрібно корисного</span>
+        <input type="text" id="szPayTarget" value="3.0" class="mini" />
+      </div>
+      <div class="sizing-row"><span>Потрібна частка</span><b id="szFrac">—</b></div>
+      <div class="sizing-note" id="szNote"></div>
+    </div>
+
+    <div class="side-head">Оцінок за прогін</div>
+    <div class="sizing">
+      <div class="sizing-row"><span>Популяція</span><b id="szPop">—</b></div>
+      <div class="sizing-row"><span>Стеля оцінок</span><b id="szEvals">—</b></div>
+      <div class="sizing-row"><span>Процесів</span><b id="szWorkers">—</b></div>
+      <div class="sizing-big"><span>Орієнтовно</span><b id="szTime">—</b></div>
+      <div class="sizing-row"><span>Бюджет часу</span><b id="szBudget">—</b></div>
+      <div class="sizing-note" id="szTimeNote"></div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Пошук параметра — назва або код (напр. S_FIXED)" />
+      <label class="check adv-toggle"><input type="checkbox" id="showAdv" /> <span id="advLabel">Решта параметрів</span></label>
+      <div class="spacer"></div>
+      <button class="btn accent" id="btnRescale">⤢ Перерахувати габарити під розмір</button>
+      <button class="btn" id="btnReset">Скинути до дефолтів</button>
+      <button class="btn" id="btnOpen">Завантажити…</button>
+      <button class="btn" id="btnSaveAs">Зберегти як…</button>
+      <button class="btn primary" id="btnSave">Зберегти конфіг</button>
+    </div>
+    <div class="frozen-bar" id="paramsFrozenBar">
+      <b>Дослідження прораховане — параметри заморожені.</b>
+      Ці числа відповідають наявним результатам. Щоб змінити — клонуйте дослідження.
+      <button class="btn accent" data-clone="1">Клонувати дослідження</button>
+    </div>
+    <div class="dirty-bar" id="dirtyBar">Є незбережені зміни — вони не потраплять у розрахунок, поки не натиснете «Зберегти конфіг».</div>
+    <div class="rescale-warn" id="rescaleWarn"></div>
+    <div class="rescale-report" id="rescaleReport"></div>
+    <div class="basic-note">Показано лише параметри, які змінюють літак. Решта <b id="advCount">—</b> внутрішніх коефіцієнтів уже заповнена значеннями зі скрипта і працює без вашої участі — вмикайте «Решта параметрів», тільки якщо треба щось конкретне.</div>
+    <div id="form" class="form"></div>
+  </main>
+</section>
+
+<!-- ============================== РОЗРАХУНОК ============================== -->
+<section class="page" id="page-run">
+  <main class="content wide">
+    <div class="toolbar">
+      <button class="btn primary big" id="btnRun">▶ Запустити оптимізацію</button>
+      <button class="btn danger big" id="btnStop" disabled>■ Стоп</button>
+      <div class="spacer"></div>
+      <label class="check"><input type="checkbox" id="autoscroll" checked /> Автопрокрутка</label>
+      <button class="btn" id="btnClearLog">Очистити лог</button>
+    </div>
+
+    <div class="stats" id="runStats">
+      <div class="stat"><span>Стан</span><b id="stState">не запущено</b></div>
+      <div class="stat"><span>Оцінок</span><b id="stEvals">0</b></div>
+      <div class="stat"><span>Найкраща цільова</span><b id="stBest">—</b></div>
+      <div class="stat"><span>Найкраще L/D</span><b id="stLD">—</b></div>
+      <div class="stat"><span>Час</span><b id="stTime">0:00</b></div>
+      <div class="stat"><span>PID</span><b id="stPid">—</b></div>
+    </div>
+
+    <div class="progress"><div class="progress-fill" id="progFill"></div></div>
+
+    <pre class="log" id="log"></pre>
+  </main>
+</section>
+
+<!-- ============================== РЕЗУЛЬТАТИ ============================== -->
+<section class="page" id="page-results">
+  <aside class="sidebar wide-side">
+    <div class="toolbar tight">
+      <button class="btn" id="btnRefresh">↻ Оновити</button>
+      <select id="sortBy" class="sel">
+        <option value="objective">за цільовою ↑</option>
+        <option value="ld">за L/D ↓</option>
+        <option value="id">за номером ↓</option>
+      </select>
+    </div>
+    <div class="toolbar tight">
+      <button class="btn" id="btnOpenFolder">Відкрити папку</button>
+      <button class="btn danger" id="btnClearRes">Очистити</button>
+    </div>
+    <div class="res-count" id="resCount">—</div>
+    <div class="eval-list" id="evalList"></div>
+  </aside>
+
+  <main class="content">
+    <div id="chartWrap" class="chart-wrap">
+      <div class="chart-title">Збіжність — цільова функція за номером оцінки</div>
+      <canvas id="chart" width="1000" height="180"></canvas>
+    </div>
+    <div id="detail" class="detail">
+      <div class="empty">Виберіть оцінку зі списку ліворуч.</div>
+    </div>
+  </main>
+</section>
+
+<div class="menu" id="ctxMenu"></div>
+
+<!-- Electron не підтримує window.prompt(), тож власне вікно введення -->
+<div class="modal-back" id="askBack">
+  <div class="modal">
+    <div class="modal-title" id="askTitle">Назва</div>
+    <input type="text" id="askInput" spellcheck="false" />
+    <div class="modal-btns">
+      <button class="btn" id="askCancel">Скасувати</button>
+      <button class="btn primary" id="askOk">Гаразд</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

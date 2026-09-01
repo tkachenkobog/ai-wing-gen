@@ -1,0 +1,1096 @@
+{
+  "generated_from": "01_PYTHON/NX-2_DE_Optimization.py",
+  "groups": [
+    {
+      "id": "mode",
+      "title": "Режим роботи",
+      "hint": "Головний вибір: переробляти обміряне крило NX-2 чи проєктувати нове з вимог. Цей блок зазвичай виставляє 04_SIZING/sizing.py."
+    },
+    {
+      "id": "requirements",
+      "title": "Вимоги та точка проєктування",
+      "hint": "Головні числа. Саме вони визначають, яку масу здатне нести крило."
+    },
+    {
+      "id": "geom_limits",
+      "title": "Габаритні обмеження",
+      "hint": "Жорсткі межі компонування. Усі в метрах — при зміні розміру крила їх треба масштабувати разом із ним."
+    },
+    {
+      "id": "stability",
+      "title": "Стійкість і центрівка",
+      "hint": "Центрівка не входить у геном — вона підбирається всередині кожної оцінки під заданий запас стійкості."
+    },
+    {
+      "id": "structure",
+      "title": "Структура (проксі-модель)",
+      "hint": "УВАГА: це не розрахунок лонжерона. Жорсткість EI постулюється константою, а не рахується з перерізу. Числа придатні лише для порівняння варіантів між собою."
+    },
+    {
+      "id": "objective",
+      "title": "Цільова функція",
+      "hint": "Ваги термів. W_LD домінує — за замовчуванням L/D дає ~90% значення цільової функції."
+    },
+    {
+      "id": "penalties",
+      "title": "Штрафи та обмеження",
+      "hint": "Жорсткі обмеження реалізовані як величезні штрафи (2e8), а не як справжні constraints."
+    },
+    {
+      "id": "mesh",
+      "title": "Сітка VLM",
+      "hint": "Прямо впливає на час однієї оцінки. Груба сітка використовується для похідних, основна — для фінального розрахунку."
+    },
+    {
+      "id": "output",
+      "title": "Вивід",
+      "hint": "Куда писати результати і що експортувати."
+    },
+    {
+      "id": "runtime",
+      "title": "Differential Evolution",
+      "hint": "Розмір популяції × кількість ітерацій × 16 змінних = кількість оцінок. workers=-1 задіює всі ядра."
+    }
+  ],
+  "constants": [
+    {
+      "name": "REFERENCE_MODE",
+      "group": "mode",
+      "label": "Звідки брати стартову геометрію",
+      "unit": "",
+      "hint": "nx2 = обмір крила NX-2 (як було). requirements = аналітична трапеція з площі й розмаху.",
+      "type": "str",
+      "default": "nx2"
+    },
+    {
+      "name": "FIX_ROOT_CHORD",
+      "group": "mode",
+      "label": "Фіксувати кореневу хорду",
+      "unit": "",
+      "hint": "Увімкнено = коренева хорда успадковується від еталона і не змінюється. Вимкніть, щоб вона стала результатом оптимізації.",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "STABILITY_MODE",
+      "group": "mode",
+      "label": "Планка стійкості",
+      "unit": "",
+      "hint": "reference = «не гірше за NX-2» (а він шляхово нестійкий, тож вимога пуста). absolute = ваші власні числа нижче.",
+      "type": "str",
+      "default": "reference"
+    },
+    {
+      "name": "CNBETA_MIN_REQ",
+      "group": "mode",
+      "label": "Мінімальний Cn_beta",
+      "unit": "1/рад",
+      "hint": "Шляхова стійкість. Діє лише при STABILITY_MODE = absolute. 0 = нейтрально, більше 0 = стійко.",
+      "type": "float",
+      "default": 0.0
+    },
+    {
+      "name": "CLBETA_MAX_REQ",
+      "group": "mode",
+      "label": "Максимальний Cl_beta",
+      "unit": "1/рад",
+      "hint": "Поперечна стійкість, має бути від'ємним. Діє лише при STABILITY_MODE = absolute.",
+      "type": "float",
+      "default": -0.02
+    },
+    {
+      "name": "INIT_TAPER_RATIO",
+      "group": "mode",
+      "label": "Стартове звуження",
+      "unit": "",
+      "hint": "Хорда законцівки / коренева, для стартової трапеції.",
+      "type": "float",
+      "default": 0.35
+    },
+    {
+      "name": "INIT_SWEEP_LE_DEG",
+      "group": "mode",
+      "label": "Стартова стрілоподібність",
+      "unit": "°",
+      "hint": "",
+      "type": "float",
+      "default": 12.0
+    },
+    {
+      "name": "INIT_ROOT_TWIST_DEG",
+      "group": "mode",
+      "label": "Стартова крутка в корені",
+      "unit": "°",
+      "hint": "",
+      "type": "float",
+      "default": 0.0
+    },
+    {
+      "name": "INIT_TIP_TWIST_DEG",
+      "group": "mode",
+      "label": "Стартова крутка законцівки",
+      "unit": "°",
+      "hint": "Від'ємна = washout, законцівка розвантажена.",
+      "type": "float",
+      "default": -4.0
+    },
+    {
+      "name": "INIT_DIHEDRAL_DEG",
+      "group": "mode",
+      "label": "Стартовий двогранний кут",
+      "unit": "°",
+      "hint": "",
+      "type": "float",
+      "default": 3.0
+    },
+    {
+      "name": "S_FIXED",
+      "group": "requirements",
+      "label": "Площа крила (обидві половини)",
+      "unit": "м²",
+      "hint": "Фіксована. Разом зі швидкістю й CL визначає підйомну силу.",
+      "type": "float",
+      "default": 0.15
+    },
+    {
+      "name": "B_FULL",
+      "group": "requirements",
+      "label": "Повний розмах",
+      "unit": "м",
+      "hint": "Фіксований. Подовження AR = B_FULL² / S_FIXED рахується автоматично.",
+      "type": "float",
+      "default": 1.2
+    },
+    {
+      "name": "CL_TARGET",
+      "group": "requirements",
+      "label": "Крейсерський CL",
+      "unit": "",
+      "hint": "Кут атаки підбирається так, щоб вийшов саме цей CL.",
+      "type": "float",
+      "default": 0.4
+    },
+    {
+      "name": "V_DESIGN",
+      "group": "requirements",
+      "label": "Крейсерська швидкість",
+      "unit": "м/с",
+      "hint": "Розрахункова швидкість. Підйомна сила ~ V².",
+      "type": "float",
+      "default": 12.0
+    },
+    {
+      "name": "ALTITUDE_M",
+      "group": "requirements",
+      "label": "Висота",
+      "unit": "м",
+      "hint": "Використовується для щільності повітря та числа Рейнольдса.",
+      "type": "float",
+      "default": 0.0
+    },
+    {
+      "name": "AIRFOIL_NAME",
+      "group": "requirements",
+      "label": "Профіль",
+      "unit": "",
+      "hint": "Назва профілю з бази AeroSandbox / UIUC (напр. s5020).",
+      "type": "str",
+      "default": "s5020"
+    },
+    {
+      "name": "Y_CUT",
+      "group": "requirements",
+      "label": "Межа зони фюзеляжу",
+      "unit": "м",
+      "hint": "Внутрішня частина напіврозмаху виключається зі структури, цільової функції та графіків.",
+      "type": "float",
+      "default": 0.1
+    },
+    {
+      "name": "Y_MID_CONSTRAINT",
+      "group": "geom_limits",
+      "label": "Станція контролю хорди",
+      "unit": "м",
+      "hint": "У цій точці розмаху перевіряється мінімальна хорда.",
+      "type": "float",
+      "default": 0.4
+    },
+    {
+      "name": "C_MID_MIN",
+      "group": "geom_limits",
+      "label": "Мін. хорда в цій станції",
+      "unit": "м",
+      "hint": "Жорстке обмеження. Порушення = штраф 2e8.",
+      "type": "float",
+      "default": 0.09
+    },
+    {
+      "name": "X_MAX_LIMIT",
+      "group": "geom_limits",
+      "label": "Макс. габарит по X",
+      "unit": "м",
+      "hint": "Оцінюється консервативно як max(x_передньої_кромки + хорда).",
+      "type": "float",
+      "default": 0.45
+    },
+    {
+      "name": "C_GLOBAL_MIN",
+      "group": "geom_limits",
+      "label": "Мін. хорда будь-де",
+      "unit": "м",
+      "hint": "Жорстке обмеження на всю поверхню крила.",
+      "type": "float",
+      "default": 0.04
+    },
+    {
+      "name": "C_ROOT_MAX_FRAC",
+      "group": "geom_limits",
+      "label": "Макс. коренева хорда",
+      "unit": "× середньої хорди",
+      "hint": "Діє лише коли коренева хорда вільна. Без цієї межі вона роздувалась до метрів і валила VLM: 290 із 1757 оцінок падало. Фактична стеля = min(це × S/b, X_MAX_LIMIT).",
+      "type": "float",
+      "default": 2.6
+    },
+    {
+      "name": "C_ROOT_MIN_FRAC",
+      "group": "geom_limits",
+      "label": "Мін. коренева хорда",
+      "unit": "× середньої хорди",
+      "hint": "Нижня межа кореневої хорди. 1.0 = прямокутне крило.",
+      "type": "float",
+      "default": 0.75
+    },
+    {
+      "name": "W_AREA_ERR",
+      "group": "penalties",
+      "label": "Вага похибки площі",
+      "unit": "",
+      "hint": "М'який штраф, коли межа кореневої хорди не дала витримати задану площу. Дає DE градієнт замість обриву.",
+      "type": "float",
+      "default": 2000.0
+    },
+    {
+      "name": "C_ABS_MIN_EFF",
+      "group": "geom_limits",
+      "label": "Бажана мін. хорда (м'яка)",
+      "unit": "м",
+      "hint": "М'який штраф, застосовується лише до внутрішніх 90% напіврозмаху.",
+      "type": "float",
+      "default": 0.04
+    },
+    {
+      "name": "C_ABS_HARD_MIN",
+      "group": "geom_limits",
+      "label": "Аварійний мінімум хорди",
+      "unit": "м",
+      "hint": "Тільки щоб VLM не зламався на нульовій хорді. Не проєктне обмеження.",
+      "type": "float",
+      "default": 0.015
+    },
+    {
+      "name": "C_MUL_HARD_MIN",
+      "group": "geom_limits",
+      "label": "Мін. множник хорди",
+      "unit": "",
+      "hint": "Нижня межа для форми хорди у відносних одиницях.",
+      "type": "float",
+      "default": 0.05
+    },
+    {
+      "name": "Y_TAPER_CHECK_FRAC",
+      "group": "geom_limits",
+      "label": "Точка перевірки звуження",
+      "unit": "частка напіврозмаху",
+      "hint": "Де перевіряти, що хорда не вийшла на «плато» біля законцівки.",
+      "type": "float",
+      "default": 0.85
+    },
+    {
+      "name": "TIP_TAPER_RATIO_MIN",
+      "group": "geom_limits",
+      "label": "Мін. відношення звуження",
+      "unit": "",
+      "hint": "Вимагає c(0.85·напіврозмах) >= це × c(законцівка).",
+      "type": "float",
+      "default": 1.1
+    },
+    {
+      "name": "TIP_TWIST_MAX_DEG",
+      "group": "geom_limits",
+      "label": "Макс. крутка законцівки",
+      "unit": "°",
+      "hint": "Штраф, якщо крутка законцівки більша (потрібен washout — від'ємна крутка).",
+      "type": "float",
+      "default": 0.0
+    },
+    {
+      "name": "SM_TARGET",
+      "group": "stability",
+      "label": "Цільовий запас стійкості",
+      "unit": "",
+      "hint": "0.05 = 5% САХ. Центрівка підбирається під це значення.",
+      "type": "float",
+      "default": 0.05
+    },
+    {
+      "name": "SM_DEADBAND",
+      "group": "stability",
+      "label": "Мертва зона запасу",
+      "unit": "",
+      "hint": "Відхилення в межах цієї зони не штрафується.",
+      "type": "float",
+      "default": 0.005
+    },
+    {
+      "name": "SM_SCALE",
+      "group": "stability",
+      "label": "Масштаб штрафу за запас",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.02
+    },
+    {
+      "name": "XCG_MIN",
+      "group": "stability",
+      "label": "Мін. центрівка",
+      "unit": "частка САХ",
+      "hint": "",
+      "type": "float",
+      "default": 0.05
+    },
+    {
+      "name": "XCG_MAX",
+      "group": "stability",
+      "label": "Макс. центрівка",
+      "unit": "частка САХ",
+      "hint": "",
+      "type": "float",
+      "default": 0.6
+    },
+    {
+      "name": "XCG_INIT",
+      "group": "stability",
+      "label": "Початкова центрівка",
+      "unit": "частка САХ",
+      "hint": "Стартова точка для внутрішнього розв'язувача центрівки.",
+      "type": "float",
+      "default": 0.25
+    },
+    {
+      "name": "BETA_STEP_DEG",
+      "group": "stability",
+      "label": "Крок по ковзанню",
+      "unit": "°",
+      "hint": "Для скінченно-різницевого розрахунку Cn_beta та Cl_beta.",
+      "type": "float",
+      "default": 1.0
+    },
+    {
+      "name": "SLOPE_DALPHA_DEG",
+      "group": "stability",
+      "label": "Крок по куту атаки",
+      "unit": "°",
+      "hint": "Для розрахунку CL_alpha та Cm_alpha.",
+      "type": "float",
+      "default": 1.5
+    },
+    {
+      "name": "CG_MAX_ITERS",
+      "group": "stability",
+      "label": "Макс. ітерацій центрівки",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 4
+    },
+    {
+      "name": "CG_SM_TOL",
+      "group": "stability",
+      "label": "Допуск по запасу стійкості",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.0025
+    },
+    {
+      "name": "ALPHA_SOLVE_MAXITER_COARSE",
+      "group": "stability",
+      "label": "Ітерацій α (груба сітка)",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 18
+    },
+    {
+      "name": "ALPHA_SOLVE_MAXITER_MAIN",
+      "group": "stability",
+      "label": "Ітерацій α (основна сітка)",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 12
+    },
+    {
+      "name": "EI_ROOT_BASE",
+      "group": "structure",
+      "label": "Жорсткість на згин у корені (EI)",
+      "unit": "Н·м²",
+      "hint": "ПОСТУЛЮЄТЬСЯ, не рахується. По розмаху масштабується як (хорда/коренева)³.",
+      "type": "float",
+      "default": 2000.0
+    },
+    {
+      "name": "TORSION_TO_BENDING_RATIO",
+      "group": "structure",
+      "label": "Відношення GJ/EI",
+      "unit": "",
+      "hint": "0.35 = торсійно м'яке крило. Для порівняння: гола труба ~0.77, замкнений кесон вище.",
+      "type": "float",
+      "default": 0.35
+    },
+    {
+      "name": "E_MODULUS",
+      "group": "structure",
+      "label": "Модуль пружності E",
+      "unit": "Па",
+      "hint": "Використовується ЛИШЕ щоб перерахувати постульоване EI назад у момент інерції. Не впливає на жорсткість.",
+      "type": "float",
+      "default": 50000000000.0
+    },
+    {
+      "name": "POISSON_NU",
+      "group": "structure",
+      "label": "Коефіцієнт Пуассона",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.3
+    },
+    {
+      "name": "SECTION_HEIGHT_REL",
+      "group": "structure",
+      "label": "Висота перерізу / хорда",
+      "unit": "",
+      "hint": "0.12 = 12% хорди. Використовується для оцінки напружень.",
+      "type": "float",
+      "default": 0.12
+    },
+    {
+      "name": "EA_REL",
+      "group": "structure",
+      "label": "Положення осі жорсткості",
+      "unit": "частка хорди",
+      "hint": "Захардкоджено. Саме це вам треба зробити змінною, коли додасте два лонжерони.",
+      "type": "float",
+      "default": 0.35
+    },
+    {
+      "name": "AC_REL",
+      "group": "structure",
+      "label": "Положення аеродинамічного фокуса",
+      "unit": "частка хорди",
+      "hint": "Плече крутного моменту = (AC_REL − EA_REL) × хорда.",
+      "type": "float",
+      "default": 0.25
+    },
+    {
+      "name": "W_LD",
+      "group": "objective",
+      "label": "Вага L/D",
+      "unit": "",
+      "hint": "Домінуючий терм. Саме він робить це аеродинамічним оптимізатором.",
+      "type": "float",
+      "default": 15.0
+    },
+    {
+      "name": "LD_REF",
+      "group": "objective",
+      "label": "Нормування L/D",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 15.0
+    },
+    {
+      "name": "W_MROOT",
+      "group": "objective",
+      "label": "Вага кореневого моменту",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 1.0
+    },
+    {
+      "name": "MROOT_REF",
+      "group": "objective",
+      "label": "Нормування кореневого моменту",
+      "unit": "Н·м",
+      "hint": "Треба масштабувати разом із розміром крила, інакше терм втрачає сенс.",
+      "type": "float",
+      "default": 2.0
+    },
+    {
+      "name": "W_3D",
+      "group": "objective",
+      "label": "Вага 3D-штрафу",
+      "unit": "",
+      "hint": "Карає різницю між тривимірною та проєкційною площею (за двогранний кут).",
+      "type": "float",
+      "default": 0.3
+    },
+    {
+      "name": "THREED_PEN_REF",
+      "group": "objective",
+      "label": "Нормування 3D-штрафу",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.1
+    },
+    {
+      "name": "W_TRIM",
+      "group": "objective",
+      "label": "Вага балансування",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.5
+    },
+    {
+      "name": "CM_TRIM_REF",
+      "group": "objective",
+      "label": "Нормування Cm балансування",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.05
+    },
+    {
+      "name": "W_CMA_STAB",
+      "group": "objective",
+      "label": "Вага стійкості по Cm_alpha",
+      "unit": "",
+      "hint": "Великий штраф за нестійкість (Cm_alpha >= 0).",
+      "type": "float",
+      "default": 15.0
+    },
+    {
+      "name": "W_SM_TGT",
+      "group": "objective",
+      "label": "Вага попадання в запас стійкості",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 6.0
+    },
+    {
+      "name": "W_SANITY",
+      "group": "objective",
+      "label": "Вага перевірок узгодженості",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 2.0
+    },
+    {
+      "name": "W_STR_ENERGY",
+      "group": "objective",
+      "label": "Вага енергії деформації",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.5
+    },
+    {
+      "name": "W_SIG_PEAK",
+      "group": "objective",
+      "label": "Вага пікового напруження",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.5
+    },
+    {
+      "name": "W_SIG_UNIFORM",
+      "group": "objective",
+      "label": "Вага рівномірності напружень",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.3
+    },
+    {
+      "name": "W_STAB_CONSTRAINT",
+      "group": "penalties",
+      "label": "Вага обмежень стійкості",
+      "unit": "",
+      "hint": "Cn_beta та Cl_beta порівнюються з еталонним крилом.",
+      "type": "float",
+      "default": 10.0
+    },
+    {
+      "name": "STAB_PENALTY_CAP",
+      "group": "penalties",
+      "label": "Стеля штрафу стійкості",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 10000.0
+    },
+    {
+      "name": "STAB_TOL",
+      "group": "penalties",
+      "label": "Допуск обмежень стійкості",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 1e-06
+    },
+    {
+      "name": "W_THIN_CHORD",
+      "group": "penalties",
+      "label": "Вага штрафу за тонку хорду",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 9000.0
+    },
+    {
+      "name": "W_CHORD_MONO",
+      "group": "penalties",
+      "label": "Вага штрафу за зростання хорди",
+      "unit": "",
+      "hint": "Хорда мусить не зростати до законцівки.",
+      "type": "float",
+      "default": 30000.0
+    },
+    {
+      "name": "W_TIP_TWIST",
+      "group": "penalties",
+      "label": "Вага штрафу за крутку законцівки",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 4.0
+    },
+    {
+      "name": "W_MID_CHORD_HARD",
+      "group": "penalties",
+      "label": "Жорсткий штраф: хорда в станції",
+      "unit": "",
+      "hint": "2e8 = фактично жорстке обмеження.",
+      "type": "float",
+      "default": 200000000.0
+    },
+    {
+      "name": "W_XMAX_HARD",
+      "group": "penalties",
+      "label": "Жорсткий штраф: габарит X",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 200000000.0
+    },
+    {
+      "name": "W_TIP_TAPER_HARD",
+      "group": "penalties",
+      "label": "Жорсткий штраф: звуження",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 200000000.0
+    },
+    {
+      "name": "W_GLOBAL_CHORD_HARD",
+      "group": "penalties",
+      "label": "Жорсткий штраф: глобальна мін. хорда",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 200000000.0
+    },
+    {
+      "name": "CL_BINS_MISMATCH_TOL",
+      "group": "penalties",
+      "label": "Допуск неузгодженості CL",
+      "unit": "",
+      "hint": "Порівнює CL від VLM із CL, проінтегрованим по розподілу підйомної сили.",
+      "type": "float",
+      "default": 0.08
+    },
+    {
+      "name": "CL_BINS_MISMATCH_PEN",
+      "group": "penalties",
+      "label": "Штраф за неузгодженість CL",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 150.0
+    },
+    {
+      "name": "NUM_SECTIONS_PER_SEMISPAN",
+      "group": "mesh",
+      "label": "Перерізів на напіврозмах",
+      "unit": "",
+      "hint": "Кількість станцій геометрії.",
+      "type": "int",
+      "default": 15
+    },
+    {
+      "name": "SPANWISE_RES_MAIN",
+      "group": "mesh",
+      "label": "Панелей по розмаху (основна)",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 14
+    },
+    {
+      "name": "CHORDWISE_RES_MAIN",
+      "group": "mesh",
+      "label": "Панелей по хорді (основна)",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 6
+    },
+    {
+      "name": "SPANWISE_RES_COARSE",
+      "group": "mesh",
+      "label": "Панелей по розмаху (груба)",
+      "unit": "",
+      "hint": "Груба сітка використовується для похідних — швидко.",
+      "type": "int",
+      "default": 8
+    },
+    {
+      "name": "CHORDWISE_RES_COARSE",
+      "group": "mesh",
+      "label": "Панелей по хорді (груба)",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 4
+    },
+    {
+      "name": "LL_N_FOURIER_TERMS",
+      "group": "mesh",
+      "label": "Членів ряду Фур'є",
+      "unit": "",
+      "hint": "Для індуктивного опору за теорією несучої лінії.",
+      "type": "int",
+      "default": 25
+    },
+    {
+      "name": "LL_N_THETA_SAMPLES",
+      "group": "mesh",
+      "label": "Точок інтегрування θ",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 800
+    },
+    {
+      "name": "RESULTS_ROOT",
+      "group": "output",
+      "label": "Папка результатів",
+      "unit": "",
+      "hint": "Відносно 01_PYTHON. Для кожного запуску краще своя папка.",
+      "type": "str",
+      "default": "RESULTS"
+    },
+    {
+      "name": "EXPORT_STL",
+      "group": "output",
+      "label": "Експортувати STL на кожній оцінці",
+      "unit": "",
+      "hint": "340 мс і 546 КБ на варіант = 1.9 ГБ і 21 хв за повний прогін. Вимкніть і беріть STL потім через regenerate.py.",
+      "type": "bool",
+      "default": false
+    },
+    {
+      "name": "EXPORT_CURVES",
+      "group": "output",
+      "label": "Писати curves.json",
+      "unit": "",
+      "hint": "0.5 мс і 2.5 КБ на варіант — числа, з яких UI малює графіки. Тримайте увімкненим.",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "STL_N_AIRFOIL",
+      "group": "output",
+      "label": "Точок на профіль у STL",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 180
+    }
+  ],
+  "runtime": [
+    {
+      "name": "popsize",
+      "group": "runtime",
+      "label": "Розмір популяції (×16 змінних)",
+      "unit": "",
+      "hint": "Реальна популяція = popsize × 16.",
+      "type": "int",
+      "default": 10
+    },
+    {
+      "name": "maxiter",
+      "group": "runtime",
+      "label": "Максимум ітерацій DE",
+      "unit": "",
+      "hint": "",
+      "type": "int",
+      "default": 20
+    },
+    {
+      "name": "workers",
+      "group": "runtime",
+      "label": "Процесів",
+      "unit": "",
+      "hint": "-1 = усі ядра. Код до цього готовий, але за замовчуванням стоїть 1.",
+      "type": "int",
+      "default": 1
+    },
+    {
+      "name": "seed",
+      "group": "runtime",
+      "label": "Seed",
+      "unit": "",
+      "hint": "Фіксований seed = повторюваний результат.",
+      "type": "int",
+      "default": 2
+    },
+    {
+      "name": "strategy",
+      "group": "runtime",
+      "label": "Стратегія DE",
+      "unit": "",
+      "hint": "best1bin, rand1bin, best2bin тощо.",
+      "type": "str",
+      "default": "best1bin"
+    },
+    {
+      "name": "mutation_min",
+      "group": "runtime",
+      "label": "Мутація (мін)",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.5
+    },
+    {
+      "name": "mutation_max",
+      "group": "runtime",
+      "label": "Мутація (макс)",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 1.0
+    },
+    {
+      "name": "recombination",
+      "group": "runtime",
+      "label": "Рекомбінація",
+      "unit": "",
+      "hint": "",
+      "type": "float",
+      "default": 0.8
+    },
+    {
+      "name": "polish",
+      "group": "runtime",
+      "label": "Фінальне доведення (polish)",
+      "unit": "",
+      "hint": "Локальна оптимізація найкращої точки після DE.",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "time_budget_hours",
+      "group": "runtime",
+      "label": "Бюджет часу",
+      "unit": "год",
+      "hint": "Зупиняє DE після цього часу незалежно від ітерацій.",
+      "type": "float",
+      "default": 24.0
+    },
+    {
+      "name": "eval_cap_factor",
+      "group": "runtime",
+      "label": "Коефіцієнт стелі оцінок",
+      "unit": "",
+      "hint": "Стеля = (maxiter+1) × popsize × 16 × це.",
+      "type": "float",
+      "default": 1.1
+    }
+  ],
+  "bounds": [
+    {
+      "name": "SWEEP_LE_DEG",
+      "label": "Стрілоподібність передньої кромки",
+      "unit": "°",
+      "default": [
+        0.0,
+        25.0
+      ]
+    },
+    {
+      "name": "ROOT_TWIST_DEG",
+      "label": "Крутка в корені",
+      "unit": "°",
+      "default": [
+        -5.0,
+        5.0
+      ]
+    },
+    {
+      "name": "X1_OFF",
+      "label": "Зсув передньої кромки @ 1/3",
+      "unit": "м",
+      "default": [
+        0.03,
+        0.1
+      ]
+    },
+    {
+      "name": "X2_OFF",
+      "label": "Зсув передньої кромки @ 2/3",
+      "unit": "м",
+      "default": [
+        0.0,
+        0.001
+      ]
+    },
+    {
+      "name": "X3_OFF",
+      "label": "Зсув передньої кромки @ законцівка",
+      "unit": "м",
+      "default": [
+        0.03,
+        0.2
+      ]
+    },
+    {
+      "name": "C1_MUL",
+      "label": "Множник хорди @ 1/3",
+      "unit": "",
+      "default": [
+        0.22,
+        1.25
+      ]
+    },
+    {
+      "name": "DC2",
+      "label": "Спад хорди 1/3 → 2/3",
+      "unit": "",
+      "default": [
+        0.0,
+        1.25
+      ]
+    },
+    {
+      "name": "DC3",
+      "label": "Спад хорди 2/3 → законцівка",
+      "unit": "",
+      "default": [
+        0.0,
+        1.25
+      ]
+    },
+    {
+      "name": "TW1_DEG",
+      "label": "Крутка @ 1/3",
+      "unit": "°",
+      "default": [
+        -12.0,
+        1.0
+      ]
+    },
+    {
+      "name": "TW2_DEG",
+      "label": "Крутка @ 2/3",
+      "unit": "°",
+      "default": [
+        -12.0,
+        1.0
+      ]
+    },
+    {
+      "name": "TW3_DEG",
+      "label": "Крутка @ законцівка",
+      "unit": "°",
+      "default": [
+        -12.0,
+        1.0
+      ]
+    },
+    {
+      "name": "Z1_FRAC",
+      "label": "Підйом z @ 20% напіврозмаху",
+      "unit": "частка напіврозмаху",
+      "default": [
+        0.0,
+        0.2
+      ]
+    },
+    {
+      "name": "Z2_FRAC",
+      "label": "Підйом z @ 45%",
+      "unit": "частка напіврозмаху",
+      "default": [
+        0.0,
+        0.2
+      ]
+    },
+    {
+      "name": "Z3_FRAC",
+      "label": "Підйом z @ 70%",
+      "unit": "частка напіврозмаху",
+      "default": [
+        0.0,
+        0.2
+      ]
+    },
+    {
+      "name": "Z4_FRAC",
+      "label": "Підйом z @ 90%",
+      "unit": "частка напіврозмаху",
+      "default": [
+        0.0,
+        0.2
+      ]
+    },
+    {
+      "name": "Z5_FRAC",
+      "label": "Підйом z @ законцівка",
+      "unit": "частка напіврозмаху",
+      "default": [
+        0.0,
+        0.2
+      ]
+    }
+  ],
+  "var_names": [
+    "SWEEP_LE_DEG",
+    "ROOT_TWIST_DEG",
+    "X1_OFF",
+    "X2_OFF",
+    "X3_OFF",
+    "C1_MUL",
+    "DC2",
+    "DC3",
+    "TW1_DEG",
+    "TW2_DEG",
+    "TW3_DEG",
+    "Z1_FRAC",
+    "Z2_FRAC",
+    "Z3_FRAC",
+    "Z4_FRAC",
+    "Z5_FRAC"
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "requirements": {
+    "payload": {
+      "mass_kg": 2.8,
+      "bay_width_m": 0.2
+    },
+    "mission": {
+      "endurance_min": 45,
+      "cruise_CL": 0.55,
+      "altitude_m": 0
+    },
+    "launch": {
+      "method": "catapult",
+      "CL_max": 1
+    },
+    "geometry_limits": {
+      "span_max_m": 3,
+      "aspect_ratio_target": 8,
+      "taper_ratio": 0.35,
+      "thickness_ratio": 0.12
+    },
+    "structure": {
+      "material": "carbon_ud",
+      "load_factor_limit": 3,
+      "safety_factor": 1.5,
+      "skin_mass_per_area_kgm2": 1.5,
+      "spar_cap_min_area_mm2": 15,
+      "tip_deflection_frac": 0.04
+    },
+    "propulsion": {
+      "battery_wh_per_kg": 180,
+      "battery_usable_fraction": 0.85,
+      "total_efficiency": 0.65,
+      "mass_per_watt_kg": 0.0012
+    },
+    "fixed_masses": {
+      "fuselage_kg": 0.6,
+      "avionics_kg": 0.35,
+      "recovery_kg": 0,
+      "misc_kg": 0.15
+    },
+    "aero_estimate": {
+      "CD0": 0.02,
+      "oswald_e": 0.85
+    },
+    "stability_requirements": {
+      "Cn_beta_min_per_rad": 0,
+      "Cl_beta_max_per_rad": -0.02,
+      "static_margin": 0.05
+    }
+  },
+  "result": {
+    "converged_iters": 23,
+    "rho": 1.225,
+    "n_ult": 4.5,
+    "wing_loading_Nm2": 156.8,
+    "wing_loading_kgm2": 15.989150219493917,
+    "mtow_kg": 5.038930931005185,
+    "S_m2": 0.31514688784784434,
+    "b_m": 1.5878208660874673,
+    "AR": 8.0,
+    "span_clipped": false,
+    "c_root_m": 0.29404090112730874,
+    "c_tip_m": 0.10291431539455806,
+    "v_cruise_mps": 21.574395598823745,
+    "v_stall_mps": 16.0,
+    "cruise_CL": 0.55,
+    "CD_est": 0.034160108907440694,
+    "LD_est": 16.100651244709585,
+    "power_shaft_W": 66.21467871124607,
+    "power_elec_W": 101.86873647884009,
+    "masses": {
+      "payload": 2.8,
+      "fuselage": 0.6,
+      "skin": 0.47272033177176653,
+      "spar": 0.04458600991973608,
+      "battery": 0.49935655136686324,
+      "propulsion": 0.1222424837746081,
+      "avionics": 0.35,
+      "recovery": 0,
+      "misc": 0.15
+    },
+    "spar": {
+      "m_spar_kg": 0.04458600991973608,
+      "cap_area_m2": 1.4999999999999999e-05,
+      "cap_area_mm2": 14.999999999999998,
+      "cap_thickness_mm": 0.6,
+      "spar_height_m": 0.029992171914985488,
+      "M_root_ultimate_Nm": 37.07339844493057,
+      "M_root_1g_Nm": 8.238532987762348,
+      "EI_root_Nm2": 809.5773385602397,
+      "tip_deflection_m": 0.0034751500480040463,
+      "tip_deflection_frac": 0.004377257059944207,
+      "driver": "технологія",
+      "A_strength_mm2": 2.0601708200180373,
+      "A_stiffness_mm2": 1.6414713974790776,
+      "A_min_mm2": 14.999999999999998
+    },
+    "payload_fraction": 0.5556734232595336,
+    "material": "carbon_ud"
+  },
+  "config_patch": {
+    "S_FIXED": 0.31515,
+    "B_FULL": 1.5878,
+    "V_DESIGN": 21.574,
+    "CL_TARGET": 0.55,
+    "ALTITUDE_M": 0,
+    "Y_CUT": 0.125,
+    "Y_MID_CONSTRAINT": 0.5295,
+    "C_MID_MIN": 0.1332,
+    "C_GLOBAL_MIN": 0.0617,
+    "C_ABS_MIN_EFF": 0.0772,
+    "C_ABS_HARD_MIN": 0.0257,
+    "X_MAX_LIMIT": 0.4999,
+    "MROOT_REF": 8.239,
+    "LD_REF": 16.1,
+    "EI_ROOT_BASE": 809.6,
+    "E_MODULUS": 120000000000.0,
+    "SECTION_HEIGHT_REL": 0.12,
+    "REFERENCE_MODE": "requirements",
+    "FIX_ROOT_CHORD": false,
+    "INIT_TAPER_RATIO": 0.35,
+    "STABILITY_MODE": "absolute",
+    "CNBETA_MIN_REQ": 0,
+    "CLBETA_MAX_REQ": -0.02,
+    "SM_TARGET": 0.05
+  },
+  "bounds_patch": {
+    "X1_OFF": [
+      0.0,
+      0.1029
+    ],
+    "X2_OFF": [
+      0.0,
+      0.1029
+    ],
+    "X3_OFF": [
+      0.0,
+      0.2058
+    ]
+  }
+}

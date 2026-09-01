@@ -1,0 +1,33 @@
+{
+  "name": "тест2",
+  "slug": "2026-07-27_test2",
+  "project": "nosytel-3-kh",
+  "parent": null,
+  "status": "sized",
+  "frozen": false,
+  "created_at": "2026-07-27 14:32:30",
+  "sized_at": "2026-07-27 17:03:52",
+  "run_started_at": null,
+  "run_finished_at": null,
+  "note": "",
+  "has_config": true,
+  "has_report": true,
+  "summary": {
+    "S_m2": 0.31515,
+    "b_m": 1.5878,
+    "AR": 8,
+    "V_mps": 21.574,
+    "CL": 0.55,
+    "airfoil": "s5020",
+    "reference_mode": "requirements",
+    "stability_mode": "absolute",
+    "mtow_kg": 5.038930931005185,
+    "payload_fraction": 0.5556734232595336,
+    "v_stall_mps": 16,
+    "LD_est": 16.100651244709585,
+    "wing_loading_kgm2": 15.989150219493917,
+    "evals": 0,
+    "failed": 0,
+    "best": null
+  }
+}

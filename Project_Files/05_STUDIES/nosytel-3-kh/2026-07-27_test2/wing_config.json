@@ -1,0 +1,171 @@
+{
+  "_comment": "Written by the Electron UI. Delete this file to fall back to the constants hardcoded in NX-2_DE_Optimization.py.",
+  "_saved_at": "2026-07-26T13:54:49.808Z",
+  "constants": {
+    "REFERENCE_MODE": "requirements",
+    "FIX_ROOT_CHORD": false,
+    "STABILITY_MODE": "absolute",
+    "CNBETA_MIN_REQ": 0,
+    "CLBETA_MAX_REQ": -0.02,
+    "INIT_TAPER_RATIO": 0.35,
+    "INIT_SWEEP_LE_DEG": 12,
+    "INIT_ROOT_TWIST_DEG": 0,
+    "INIT_TIP_TWIST_DEG": -4,
+    "INIT_DIHEDRAL_DEG": 3,
+    "S_FIXED": 0.31515,
+    "B_FULL": 1.5878,
+    "CL_TARGET": 0.55,
+    "V_DESIGN": 21.574,
+    "ALTITUDE_M": 0,
+    "AIRFOIL_NAME": "s5020",
+    "Y_CUT": 0.125,
+    "Y_MID_CONSTRAINT": 0.5295,
+    "C_MID_MIN": 0.1332,
+    "X_MAX_LIMIT": 0.4999,
+    "C_GLOBAL_MIN": 0.0617,
+    "C_ABS_MIN_EFF": 0.0772,
+    "C_ABS_HARD_MIN": 0.0257,
+    "C_MUL_HARD_MIN": 0.05,
+    "Y_TAPER_CHECK_FRAC": 0.85,
+    "TIP_TAPER_RATIO_MIN": 1.1,
+    "TIP_TWIST_MAX_DEG": 0,
+    "SM_TARGET": 0.05,
+    "SM_DEADBAND": 0.005,
+    "SM_SCALE": 0.02,
+    "XCG_MIN": 0.05,
+    "XCG_MAX": 0.6,
+    "XCG_INIT": 0.25,
+    "BETA_STEP_DEG": 1,
+    "SLOPE_DALPHA_DEG": 1.5,
+    "CG_MAX_ITERS": 4,
+    "CG_SM_TOL": 0.0025,
+    "ALPHA_SOLVE_MAXITER_COARSE": 18,
+    "ALPHA_SOLVE_MAXITER_MAIN": 12,
+    "EI_ROOT_BASE": 809.6,
+    "TORSION_TO_BENDING_RATIO": 0.35,
+    "E_MODULUS": 120000000000.0,
+    "POISSON_NU": 0.3,
+    "SECTION_HEIGHT_REL": 0.12,
+    "EA_REL": 0.35,
+    "AC_REL": 0.25,
+    "DEFLECTION_SCALE_VIS": 50,
+    "W_LD": 15,
+    "LD_REF": 16.1,
+    "W_MROOT": 1,
+    "MROOT_REF": 8.239,
+    "W_3D": 0.3,
+    "THREED_PEN_REF": 0.1,
+    "W_TRIM": 0.5,
+    "CM_TRIM_REF": 0.05,
+    "W_CMA_STAB": 15,
+    "W_SM_TGT": 6,
+    "W_SANITY": 2,
+    "W_STR_ENERGY": 0.5,
+    "W_SIG_PEAK": 0.5,
+    "W_SIG_UNIFORM": 0.3,
+    "W_STAB_CONSTRAINT": 10,
+    "STAB_PENALTY_CAP": 10000,
+    "STAB_TOL": 1e-06,
+    "W_THIN_CHORD": 9000,
+    "W_CHORD_MONO": 30000,
+    "W_TIP_TWIST": 4,
+    "W_MID_CHORD_HARD": 200000000,
+    "W_XMAX_HARD": 200000000,
+    "W_TIP_TAPER_HARD": 200000000,
+    "W_GLOBAL_CHORD_HARD": 200000000,
+    "CL_BINS_MISMATCH_TOL": 0.08,
+    "CL_BINS_MISMATCH_PEN": 150,
+    "NUM_SECTIONS_PER_SEMISPAN": 15,
+    "SPANWISE_RES_MAIN": 14,
+    "CHORDWISE_RES_MAIN": 6,
+    "SPANWISE_RES_COARSE": 8,
+    "CHORDWISE_RES_COARSE": 4,
+    "LL_N_FOURIER_TERMS": 25,
+    "LL_N_THETA_SAMPLES": 800,
+    "RESULTS_ROOT": "C:\\Users\\BohdanTkachenko\\Downloads\\ai-wing-gen\\Project_Files\\05_STUDIES\\nosytel-3-kh\\2026-07-27_test2\\RESULTS",
+    "EXPORT_STL": false,
+    "STL_N_AIRFOIL": 180,
+    "EXPORT_PLOTS": false,
+    "EXPORT_CURVES": true
+  },
+  "bounds": {
+    "SWEEP_LE_DEG": [
+      0,
+      25
+    ],
+    "ROOT_TWIST_DEG": [
+      -5,
+      5
+    ],
+    "X1_OFF": [
+      0.0,
+      0.1029
+    ],
+    "X2_OFF": [
+      0.0,
+      0.1029
+    ],
+    "X3_OFF": [
+      0.0,
+      0.2058
+    ],
+    "C1_MUL": [
+      0.22,
+      1.25
+    ],
+    "DC2": [
+      0,
+      1.25
+    ],
+    "DC3": [
+      0,
+      1.25
+    ],
+    "TW1_DEG": [
+      -12,
+      1
+    ],
+    "TW2_DEG": [
+      -12,
+      1
+    ],
+    "TW3_DEG": [
+      -12,
+      1
+    ],
+    "Z1_FRAC": [
+      0,
+      0.2
+    ],
+    "Z2_FRAC": [
+      0,
+      0.2
+    ],
+    "Z3_FRAC": [
+      0,
+      0.2
+    ],
+    "Z4_FRAC": [
+      0,
+      0.2
+    ],
+    "Z5_FRAC": [
+      0,
+      0.2
+    ]
+  },
+  "runtime": {
+    "popsize": 10,
+    "maxiter": 20,
+    "workers": -1,
+    "seed": 2,
+    "strategy": "best1bin",
+    "mutation_min": 0.5,
+    "mutation_max": 1,
+    "recombination": 0.8,
+    "polish": true,
+    "time_budget_hours": 24,
+    "eval_cap_factor": 1.1
+  },
+  "_sized_by": "04_SIZING/sizing.py"
+}

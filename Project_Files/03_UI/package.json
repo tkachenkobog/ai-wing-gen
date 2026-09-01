@@ -1,0 +1,15 @@
+{
+  "name": "wing-gen-ui",
+  "version": "1.0.0",
+  "private": true,
+  "description": "UI for NX-2_DE_Optimization.py - edit constants, run the optimizer, browse results",
+  "main": "main.js",
+  "scripts": {
+    "start": "node launch.js",
+    "debug": "node launch.js --ui-debug",
+    "schema": "py -3 tools/gen_schema.py"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0"
+  }
+}

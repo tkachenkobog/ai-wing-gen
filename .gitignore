@@ -1,0 +1,40 @@
+# Local tooling and editor state
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment files and Python caches
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# JavaScript dependencies and build output
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Runtime logs
+*.log
+log.*
+nohup.out
+
+# OpenFOAM generated meshes, decomposed cases, and simulation output
+Project_Files/02_OpenFOAM_NX-2/**/constant/polyMesh/
+Project_Files/02_OpenFOAM_NX-2/**/constant/extendedFeatureEdgeMesh/
+Project_Files/02_OpenFOAM_NX-2/**/postProcessing/
+Project_Files/02_OpenFOAM_NX-2/**/processor*/
+Project_Files/02_OpenFOAM_NX-2/**/0/
+Project_Files/02_OpenFOAM_NX-2/**/[1-9]*/
+Project_Files/02_OpenFOAM_NX-2/**/*.eMesh
+Project_Files/02_OpenFOAM_NX-2/**/*.obj
+Project_Files/02_OpenFOAM_NX-2/**/*.foam
+Project_Files/02_OpenFOAM_NX-2/**/*Convergence*.png
